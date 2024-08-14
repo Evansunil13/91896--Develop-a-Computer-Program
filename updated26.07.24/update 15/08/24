@@ -1,0 +1,151 @@
+import tkinter as tk
+from tkinter import ttk
+
+# Quit subroutine
+def quit_app():
+    main_window.destroy()
+
+# Print details of all the items in the inventory
+def print_inventory_details():
+    item_count = 0
+    # Create the column headings
+    tk.Label(main_window, font=("Helvetica 10 bold"), text="Row").grid(column=0, row=7)
+    tk.Label(main_window, font=("Helvetica 10 bold"), text="Name").grid(column=1, row=7)
+    tk.Label(main_window, font=("Helvetica 10 bold"), text="Category").grid(column=2, row=7)
+    tk.Label(main_window, font=("Helvetica 10 bold"), text="Quantity").grid(column=3, row=7)
+    tk.Label(main_window, font=("Helvetica 10 bold"), text="Price").grid(column=4, row=7)
+    # Add each item in the list into its own row
+    while item_count < counters['total_entries']:
+        tk.Label(main_window, text=item_count).grid(column=0, row=item_count+8)
+        tk.Label(main_window, text=(inventory_details[item_count][0])).grid(column=1, row=item_count+8)
+        tk.Label(main_window, text=(inventory_details[item_count][1])).grid(column=2, row=item_count+8)
+        tk.Label(main_window, text=(inventory_details[item_count][2])).grid(column=3, row=item_count+8)
+        tk.Label(main_window, text=(inventory_details[item_count][3])).grid(column=4, row=item_count+8)
+        item_count += 1
+        counters['item_count'] = item_count
+
+# Check the inputs are all valid
+def check_inputs():
+    input_check = 0
+    tk.Label(main_window, text="               ").grid(column=2, row=0)
+    tk.Label(main_window, text="               ").grid(column=2, row=1)
+    tk.Label(main_window, text="               ").grid(column=2, row=2)
+    tk.Label(main_window, text="               ").grid(column=2, row=3)
+    # Check that product name is not blank, set error text if blank
+    if len(entry_product_name.get()) == 0:
+        tk.Label(main_window, fg="red", text="Required").grid(column=2, row=0)
+        input_check = 1
+    # Check that category is not selected, set error text if blank
+    if len(entry_category.get()) == 0:
+        tk.Label(main_window, fg="red", text="Required").grid(column=2, row=1)
+        input_check = 1
+    # Check the quantity is not blank and is a positive integer, set error text if blank or invalid
+    if (entry_quantity.get().isdigit()):
+        if int(entry_quantity.get()) <= 0:
+            tk.Label(main_window, fg="red", text="Positive number only").grid(column=2, row=2)
+            input_check = 1
+    else:
+        tk.Label(main_window, fg="red", text="Positive number only").grid(column=2, row=2)
+        input_check = 1
+    # Check that price is not blank and is a valid number, set error text if blank or invalid
+    try:
+        price = float(entry_price.get())
+        if price <= 0:
+            raise ValueError
+    except ValueError:
+        tk.Label(main_window, fg="red", text="Valid price required").grid(column=2, row=3)
+        input_check = 1
+
+    if input_check == 0:
+       submit_item()
+
+# Add the next item to the inventory list
+def submit_item():
+    # submit each item to its own area of the list
+    inventory_details.submit([entry_product_name.get(), entry_category.get(), entry_quantity.get(), entry_price.get()])
+    # Clear the input boxes
+    entry_product_name.delete(0, 'end')
+    entry_category.set('')  # Reset the combobox
+    entry_quantity.delete(0, 'end')
+    entry_price.delete(0, 'end')
+    counters['total_entries'] += 1
+
+# Delete a row from the inventory list
+def delete_row():
+    # Find which row is to be deleted and delete it
+    del inventory_details[int(delete_item.get())]
+    counters['total_entries'] -= 1
+    item_count = counters['item_count']
+    delete_item.delete(0, 'end')
+    # Clear the last item displayed on the GUI
+    tk.Label(main_window, text="       ").grid(column=0, row=item_count+7)
+    tk.Label(main_window, text="       ").grid(column=1, row=item_count+7)
+    tk.Label(main_window, text="       ").grid(column=2, row=item_count+7)
+    tk.Label(main_window, text="       ").grid(column=3, row=item_count+7)
+    tk.Label(main_window, text="       ").grid(column=4, row=item_count+7)
+    # Print all the items in the list
+    print_inventory_details()
+
+# Create the buttons and labels
+def setup_buttons():
+    global entry_product_name, entry_category, entry_quantity, entry_price, delete_item
+    # Create all the empty and default labels, buttons, and entry boxes. Put them in the correct grid location
+    tk.Label(main_window, text="Customer Name").grid(column=0, row=0, sticky=tk.E)
+    tk.Label(main_window, text="Item customer has hired").grid(column=0, row=1, sticky=tk.E)
+    tk.Button(main_window, text="Quit", command=quit_app, width=10, bg="snow2").grid(column=4, row=0, sticky=tk.E)
+    tk.Button(main_window, text="submit", command=check_inputs, bg="snow2").grid(column=3, row=1)
+    tk.Button(main_window, text="Print Details", command=print_inventory_details, width=10, bg="snow2").grid(column=4, row=1, sticky=tk.E)
+    tk.Label(main_window, text="Quantity of item").grid(column=0, row=2, sticky=tk.E)
+    tk.Label(main_window, text="Row #").grid(column=3, row=2, sticky=tk.E)
+    tk.Button(main_window, text="Delete Row", command=delete_row, width=10, bg="snow2").grid(column=4, row=3, sticky=tk.E)
+    tk.Label(main_window, text="               ").grid(column=2, row=0)
+
+    # Create entry widgets (for product name, category, quantity, and price)
+    entry_product_name = tk.Entry(main_window)
+
+    # Combobox for items that could be bought from a party store
+    entry_category = ttk.Combobox(main_window, width=27)
+    entry_category['values'] = ('Balloons', 'Streamers', 'Party Hats', 'Confetti', 'Candles', 'Party Favors')
+
+    entry_quantity = tk.Entry(main_window)
+    entry_price = tk.Entry(main_window)
+    delete_item = tk.Entry(main_window)
+
+    # Place the entry widgets in the grid
+    entry_product_name.grid(column=1, row=0)
+    entry_category.grid(column=1, row=1)
+    entry_quantity.grid(column=1, row=2)
+    entry_price.grid(column=1, row=3)
+    delete_item.grid(column=3, row=3)
+
+# Start the program running
+def main():
+    global main_window
+    main_window = tk.Toplevel(root)
+
+    # Load the GIF image
+    gif = tk.PhotoImage(file="C:/Users/sunil/Downloads/baloons.png")  # Use your GIF file here
+
+    # Create a label to display the GIF and place it in the window
+    gif_label = tk.Label(main_window, image=gif)
+    gif_label.grid(column=0, row=5, columnspan=5, pady=10)
+
+    # Keep a reference to avoid garbage collection
+    gif_label.image = gif
+
+    # Start the GUI
+    setup_buttons()
+    main_window.mainloop()
+
+# Initialize the main root window
+root = tk.Tk()
+root.withdraw()  # Hide the root window
+
+# Create empty list for inventory details and empty variable for entries in the list
+counters = {'total_entries': 0, 'item_count': 0}
+inventory_details = []
+
+# Run the main loop
+main()
+
+
