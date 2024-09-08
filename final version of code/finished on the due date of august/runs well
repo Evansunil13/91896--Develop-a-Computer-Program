@@ -1,0 +1,504 @@
+import random
+import tkinter
+from tkinter import ttk
+from tkinter import messagebox
+from tkinter import PhotoImage  
+
+
+# Define font
+custom_font = "Times New Roman Bold", 24
+
+# Define button width
+button_width = 12
+
+# Define colors
+slate_gray = "#708090"
+light_steel_blue = "#B0C4DE"
+white = "#FFFFFF"
+snow2 = "#EDEDED"  # Changed to snow2 for button as it looked better
+
+# List of items available
+item_options = ["Chair", "Balloon", "Candle", "Table", "Confetti", "Garland", "Party Hat"]
+
+# List to store the user entries
+assessment = []
+
+# Load image thats been put in
+def load_image(path):
+    return PhotoImage(file=path)
+
+# Load receipts by using stored data
+def load_existing_receipts():
+    try:
+        with open("assessment.txt", "r") as file:
+            for line in file:
+                customer_name, item_name, number_of_items, receipt_code = line.strip().split(",")
+                receipt_details = {
+                    "customer_name": customer_name,
+                    "item_name": item_name,
+                    "number_of_items": number_of_items,
+                    "receipt_code": receipt_code
+                }
+                assessment.append(receipt_details)
+    except FileNotFoundError:
+        pass  # File does not exist, meaning no receipts have been saved yet
+
+load_existing_receipts()
+
+# to generate random and unique receipt code
+def generate_receipt_code():
+    while True:
+        letter = random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        digits = random.randint(100, 999)
+        new_code = f"{letter}{digits}"
+        if not any(receipt['receipt_code'] == new_code for receipt in assessment):
+            return new_code
+
+# functions for validation
+def check_length(name):
+    return len(name) <= 20
+
+def check_text(name):
+    return name.replace(" ", "").isalpha()
+
+# Hire item window
+def hire_item():
+    hire_window = tkinter.Toplevel(window)
+    hire_window.title("Julie's Party Hire - Hire Item")
+    hire_window.configure(bg=slate_gray)
+
+    # image for hire item window
+    hire_image = load_image("C:/Users/sunil/Downloads/julies (1).png")
+    hire_image_label = tkinter.Label(hire_window, image=hire_image, bg=slate_gray)
+    hire_image_label.image = hire_image  # Keep a reference to prevent garbage collection
+    hire_image_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+    hire_title_label = tkinter.Label(
+        hire_window,
+        text="Julie's Party Hire - Hire Item",
+        bg=slate_gray,
+        fg=white,
+        font=custom_font
+    )
+    hire_title_label.grid(row=1, column=0, columnspan=2, pady=10)
+
+    # Customer Name
+    tkinter.Label(
+        hire_window,
+        text="Full Name:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(column=0, row=2, sticky='e', padx=5, pady=5)
+    customer_name_entry = tkinter.Entry(hire_window, width=30)
+    customer_name_entry.grid(column=1, row=2, padx=5, pady=5)
+
+    # Item Name
+    tkinter.Label(
+        hire_window,
+        text="Item Name:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(column=0, row=3, sticky='e', padx=5, pady=5)
+    item_name_combobox = ttk.Combobox(hire_window, values=item_options, state="readonly")
+    item_name_combobox.grid(column=1, row=3, padx=5, pady=5)
+    item_name_combobox.current(0)
+
+    # Number of Items
+    tkinter.Label(
+        hire_window,
+        text="Number of Items:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(column=0, row=4, sticky='e', padx=5, pady=5)
+    number_of_items_spinbox = tkinter.Spinbox(hire_window, from_=1, to=500, width=28)
+    number_of_items_spinbox.grid(column=1, row=4, padx=5, pady=5)
+
+    # Hire Item Button
+    hire_item_button = tkinter.Button(
+        hire_window,
+        text="Hire Item",
+        bg=light_steel_blue,
+        fg=snow2,
+        width=button_width,
+        font=15,
+        command=lambda: generate_receipt(
+            customer_name_entry.get(),
+            item_name_combobox.get(),
+            number_of_items_spinbox.get(),
+            hire_window
+        )
+    )
+    hire_item_button.grid(column=0, row=5, padx=10, pady=10)
+
+    # Go Back Button
+    go_back_button = tkinter.Button(
+        hire_window,
+        text="Go Back",
+        command=hire_window.destroy,
+        bg=light_steel_blue,
+        fg=snow2,
+        width=button_width,
+        font=15
+    )
+    go_back_button.grid(column=1, row=5, padx=10, pady=10)
+
+    hire_window.grid_columnconfigure(0, weight=1)
+    hire_window.grid_columnconfigure(1, weight=1)
+
+# Generate receipt function
+def generate_receipt(customer_name, item_name, number_of_items, hire_window):
+    # Validation checks
+    if not customer_name.strip() or not item_name.strip() or not number_of_items.strip():
+        messagebox.showwarning("Input Error", "Please fill in all fields.")
+        return
+    if not check_length(customer_name):
+        messagebox.showerror("Input Error", "Full name must be at most 20 characters long.")
+        return
+    if not check_text(customer_name):
+        messagebox.showerror("Input Error", "Full name must contain only alphabets and spaces.")
+        return
+    if not number_of_items.isdigit() or int(number_of_items) < 1 or int(number_of_items) > 500:
+        messagebox.showerror("Input Error", "Number of items must be a whole number between 1 and 500.")
+        return
+    if item_name not in item_options:
+        messagebox.showerror("Input Error", "Invalid item selected.")
+        return
+
+    confirm_hire = messagebox.askyesno("Confirm Hire", "Is this everything needed for this hire?")
+    if not confirm_hire:
+        return
+
+    receipt_code = generate_receipt_code()
+    receipt_details = {
+        "customer_name": customer_name,
+        "item_name": item_name,
+        "number_of_items": number_of_items,
+        "receipt_code": receipt_code
+    }
+    assessment.append(receipt_details)
+
+    with open("assessment.txt", "a") as file:
+        file.write(f"{customer_name},{item_name},{number_of_items},{receipt_code}\n")
+
+    hire_window.destroy()
+
+    # Receipt window
+    receipt_window = tkinter.Toplevel(window)
+    receipt_window.title("Julie's Party Hire - Receipt")
+    receipt_window.configure(bg=slate_gray)
+
+    # Load image for receipt window
+    receipt_image = load_image("C:/Users/sunil/Downloads/julies (1).png")
+    receipt_image_label = tkinter.Label(receipt_window, image=receipt_image, bg=slate_gray)
+    receipt_image_label.image = receipt_image  
+    receipt_image_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+    receipt_title_label = tkinter.Label(
+        receipt_window,
+        text="Hiring Receipt",
+        bg=slate_gray,
+        fg=white,
+        font=custom_font
+    )
+    receipt_title_label.grid(row=1, column=0, columnspan=2, pady=10)
+
+    tkinter.Label(
+        receipt_window,
+        text="Customer Name:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=2, column=0, sticky='e', padx=5, pady=5)
+    tkinter.Label(
+        receipt_window,
+        text=customer_name,
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=2, column=1, sticky='w', padx=5, pady=5)
+
+    tkinter.Label(
+        receipt_window,
+        text="Item Name:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=3, column=0, sticky='e', padx=5, pady=5)
+    tkinter.Label(
+        receipt_window,
+        text=item_name,
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=3, column=1, sticky='w', padx=5, pady=5)
+
+    tkinter.Label(
+        receipt_window,
+        text="Number of Items:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=4, column=0, sticky='e', padx=5, pady=5)
+    tkinter.Label(
+        receipt_window,
+        text=number_of_items,
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=4, column=1, sticky='w', padx=5, pady=5)
+
+    tkinter.Label(
+        receipt_window,
+        text="Receipt Code:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=5, column=0, sticky='e', padx=5, pady=5)
+    tkinter.Label(
+        receipt_window,
+        text=receipt_code,
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=5, column=1, sticky='w', padx=5, pady=5)
+
+    close_button = tkinter.Button(
+        receipt_window,
+        text="Close",
+        command=receipt_window.destroy,
+        bg=light_steel_blue,
+        fg=snow2,
+        width=button_width,
+        font=15
+    )
+    close_button.grid(column=0, row=6, columnspan=2, padx=10, pady=10)
+
+# View receipts window
+def view_receipts():
+    view_window = tkinter.Toplevel(window)
+    view_window.title("Julie's Party Hire - View Receipts")
+    view_window.configure(bg=slate_gray)
+
+    # Load image for view window
+    view_image = load_image("C:/Users/sunil/Downloads/julies (1).png")
+    view_image_label = tkinter.Label(view_window, image=view_image, bg=slate_gray)
+    view_image_label.image = view_image  
+    view_image_label.grid(row=0, column=0, columnspan=4, pady=10)
+
+    view_title_label = tkinter.Label(
+        view_window,
+        text="Julie's Party Hire - View Receipts",
+        bg=slate_gray,
+        fg=white,
+        font=custom_font
+    )
+    view_title_label.grid(row=1, column=0, columnspan=4, pady=10)
+
+    # Display headers for the receipt list
+    tkinter.Label(
+        view_window,
+        text="Customer Name",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=2, column=0, padx=10, pady=5)
+
+    tkinter.Label(
+        view_window,
+        text="Item Name",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=2, column=1, padx=10, pady=5)
+
+    tkinter.Label(
+        view_window,
+        text="Number of Items",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=2, column=2, padx=10, pady=5)
+
+    tkinter.Label(
+        view_window,
+        text="Receipt Code",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(row=2, column=3, padx=10, pady=5)
+
+    # Display the stored receipts
+    for index, receipt in enumerate(assessment):
+        tkinter.Label(
+            view_window,
+            text=receipt["customer_name"],
+            bg=slate_gray,
+            fg=white,
+            font=10
+        ).grid(row=index+3, column=0, padx=10, pady=5)
+
+        tkinter.Label(
+            view_window,
+            text=receipt["item_name"],
+            bg=slate_gray,
+            fg=white,
+            font=10
+        ).grid(row=index+3, column=1, padx=10, pady=5)
+
+        tkinter.Label(
+            view_window,
+            text=receipt["number_of_items"],
+            bg=slate_gray,
+            fg=white,
+            font=10
+        ).grid(row=index+3, column=2, padx=10, pady=5)
+
+        tkinter.Label(
+            view_window,
+            text=receipt["receipt_code"],
+            bg=slate_gray,
+            fg=white,
+            font=10
+        ).grid(row=index+3, column=3, padx=10, pady=5)
+
+    close_button = tkinter.Button(
+        view_window,
+        text="Close",
+        command=view_window.destroy,
+        bg=light_steel_blue,
+        fg=snow2,
+        width=button_width,
+        font=15
+    )
+    close_button.grid(column=0, row=len(assessment)+3, columnspan=4, padx=10, pady=10)
+
+# Delete receipt function
+def delete_receipt():
+    delete_window = tkinter.Toplevel(window)
+    delete_window.title("Julie's Party Hire - return")
+    delete_window.configure(bg=slate_gray)
+
+    # Load image for delete window
+    delete_image = load_image("C:/Users/sunil/Downloads/julies (1).png")
+    delete_image_label = tkinter.Label(delete_window, image=delete_image, bg=slate_gray)
+    delete_image_label.image = delete_image  
+    delete_image_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+    delete_title_label = tkinter.Label(
+        delete_window,
+        text="Julie's Party Hire - return",
+        bg=slate_gray,
+        fg=white,
+        font=custom_font
+    )
+    delete_title_label.grid(row=1, column=0, columnspan=2, pady=10)
+
+    # Entry for receipt code
+    tkinter.Label(
+        delete_window,
+        text="Receipt Code:",
+        bg=slate_gray,
+        fg=white,
+        font=10
+    ).grid(column=0, row=2, sticky='e', padx=5, pady=5)
+    receipt_code_entry = tkinter.Entry(delete_window, width=30)
+    receipt_code_entry.grid(column=1, row=2, padx=5, pady=5)
+
+    # Return Item Button
+    delete_button = tkinter.Button(
+        delete_window,
+        text="Return Item",
+        bg=light_steel_blue,
+        fg=snow2,
+        width=button_width,
+        font=15,
+        command=lambda: confirm_delete(receipt_code_entry.get(), delete_window)
+    )
+    delete_button.grid(column=0, row=3, padx=10, pady=10)
+
+    # Go Back Button
+    go_back_button = tkinter.Button(
+        delete_window,
+        text="Go Back",
+        command=delete_window.destroy,
+        bg=light_steel_blue,
+        fg=snow2,
+        width=button_width,
+        font=15
+    )
+    go_back_button.grid(column=1, row=3, padx=10, pady=10)
+
+    delete_window.grid_columnconfigure(0, weight=1)
+    delete_window.grid_columnconfigure(1, weight=1)
+
+# Set Up for the main window
+window = tkinter.Tk()
+window.title("Julie's Party Hire")
+window.configure(bg=slate_gray)
+
+# Load image for main window
+main_image = load_image("C:/Users/sunil/Downloads/julies (1).png")
+main_image_label = tkinter.Label(window, image=main_image, bg=slate_gray)
+main_image_label.image = main_image  
+main_image_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+#image for program
+title_label = tkinter.Label(
+    window,
+    text="Julie's Party Hire",
+    bg=slate_gray,
+    fg=white,
+    font=custom_font
+)
+title_label.grid(row=1, column=0, columnspan=2, pady=10)
+
+# Buttons for actions in the program
+hire_button = tkinter.Button(
+    window,
+    text="Hire Item",
+    command=hire_item,
+    bg=light_steel_blue,
+    fg=snow2,
+    width=button_width,
+    font=15
+)
+hire_button.grid(row=2, column=0, padx=10, pady=10)
+
+view_button = tkinter.Button(
+    window,
+    text="View Receipts",
+    command=view_receipts,
+    bg=light_steel_blue,
+    fg=snow2,
+    width=button_width,
+    font=15
+)
+view_button.grid(row=2, column=1, padx=10, pady=10)
+
+delete_button = tkinter.Button(
+    window,
+    text="return item",
+    command=delete_receipt,
+    bg=light_steel_blue,
+    fg=snow2,
+    width=button_width,
+    font=15
+)
+delete_button.grid(row=3, column=0, padx=10, pady=10)
+
+quit_button = tkinter.Button(
+    window,
+    text="Quit",
+    command=window.destroy,
+    bg=light_steel_blue,
+    fg=snow2,
+    width=button_width,
+    font=15
+)
+quit_button.grid(row=3, column=1, padx=10, pady=10)
+
+window.mainloop()
+
